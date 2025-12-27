@@ -1,0 +1,53 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the
+// README at: https://github.com/devcontainers/templates/tree/main/src/python
+{
+	"name": "Kubernetes Ansible Projects",
+	"build": {
+    "dockerfile": "Dockerfile",
+    // Args is one of arm64 or amd64
+    "args": {
+      "PLATFORM": "${localEnv:PLATFORM:arm64}"
+    }
+  },
+	"features": {
+		"ghcr.io/devcontainers/features/git:1": {
+			"ppa": true,
+			"version": "os-provided"
+		}
+	},
+  // We mount bash history in an attempt to preserver history between container restarts
+  // (see https://code.visualstudio.com/remote/advancedcontainers/persist-bash-history)
+  //
+  "mounts": [
+      "source=${localEnv:HOME}/.config/git,target=/home/vscode/.config/git,type=bind,consistency=cached",
+      "source=projectname-bashhistory,target=/commandhistory,type=volume"
+  ],
+  // Studio Code custom module/plugins to load.
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "codezombiech.gitignore",
+        "donjayamanne.githistory",
+        "donjayamanne.git-extension-pack",
+        "eamodio.gitlens",
+        "github.vscode-github-actions",
+        "ms-kubernetes-tools.vscode-kubernetes-tools",
+        "sourcery.sourcery",
+        "streetsidesoftware.code-spell-checker",
+        "trond-snekvik.simple-rst",
+        "vivaxy.vscode-conventional-commits",
+        "yzhang.markdown-all-in-one"
+      ]
+    }
+  },
+  "containerEnv": {
+    "SHELL": "/bin/bash"
+  },
+  // Things to do once the container's available...
+  "postCreateCommand": {
+    "Fix Volume Permissions": "sudo chown -R $(whoami): /commandhistory"
+	},
+  // Do we expect to expose ports the user needs to connect to?
+  // If so list them (as integers) here.
+  "forwardPorts": []
+}

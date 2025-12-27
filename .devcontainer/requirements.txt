@@ -1,0 +1,3 @@
+# Requirements file for the dev-container (and virtual environment).
+# All requirements MUST be pinned (i.e. only '==').
+pre-commit == 4.5.1
