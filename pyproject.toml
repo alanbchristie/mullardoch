@@ -1,0 +1,23 @@
+[project]
+name = "mullardoch"
+version = "0.1.0"
+description = "Python modules for the UGV02 robot"
+authors = [
+    {name = "a.b.christie",email = "alan.christie@matildapeak.com"}
+]
+license = {text = "Apache License 2.0"}
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "python-dotenv (>=1.2.1,<2.0.0)"
+]
+
+[dependency-groups]
+dev = [
+    "pre-commit (>=4.5.1,<5.0.0)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
