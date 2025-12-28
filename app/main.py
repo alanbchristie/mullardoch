@@ -31,8 +31,18 @@ if __name__ == "__main__":
     msg_queue.put_nowait(msg)
 
     # Now ask the user to provide a speed value (applied to left and right)
+    left: int = 0
+    right: int = 0
+    print("Enter speed, e.g. 10,20 or 30...")
     with contextlib.suppress(KeyboardInterrupt):
         while True:
-            speed = input("New speed: ")
-            speed_msg: Speed = Speed(left=int(speed), right=int(speed))
+            speed = input("New speed (CTRL-C to exit): ")
+            speed_items: list[str] = speed.split(",")
+            if len(speed_items) == 1:
+                left = speed
+                right = speed
+            else:
+                left = speed_items[0]
+                right = speed_items[1]
+            speed_msg: Speed = Speed(left=int(left), right=int(right))
             msg_queue.put_nowait(speed_msg)
