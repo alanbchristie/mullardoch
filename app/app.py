@@ -1,54 +1,32 @@
+import contextlib
+import multiprocessing as mp
+
 import config
-import asyncio
-import json
-import urllib.parse
+from queue_consumer import msg_handler
+from nudge import nudge
+from message import Speed
 
-import aiohttp
+assert config.CONNECTION_TYPE == "remote"
 
-print(f"Controlling UGV02 at {config.CONNECTION_REMOTE_IP}")
+if __name__ == '__main__':
 
-_UVG02_SPEED_CTRL: int = 1
-_UVG02_RETRIEVE_IMU_DATA: int = 126
+    # Create the main message queue,
+    # read by the queue consumer (command executor),
+    # written from the app and the nudge scheduler
+    msg_queue: mp.Queue = mp.Queue()
 
-ugv02_cmd_timeout = aiohttp.ClientTimeout(total=4)
+    # Create and start the message handler
+    handler: mp.Process = mp.Process(target=msg_handler, args=(msg_queue,))
+    handler.start()
 
-def make_request(ugv02_cmd: dict[str, any]) -> str:
-    ugv02_cmd_str: str = json.dumps(ugv02_cmd, separators=(',', ':'))
-    return f"http://{config.CONNECTION_REMOTE_IP}/js?json={ugv02_cmd_str}"
+    # Create and start the 'nudge' process.
+    # This sends a Nudge message at least once every 3 seconds.
+    nudger: mp.Process = mp.Process(target=nudge, args=(msg_queue,))
+    nudger.start()
 
-
-async def main():
-
-    async with aiohttp.ClientSession(timeout=ugv02_cmd_timeout) as session:
-
-        # IMU Data
-        ugv02_cmd: dict[str, Any] = {"T": _UVG02_RETRIEVE_IMU_DATA}
-        async with session.get(make_request(ugv02_cmd)) as ugv02_response:
-
-            response_body = await ugv02_response.text()
-            if response_body and response_body != "null":
-                print(response_body)
-
-        # FORWARD (0.05)
-        ugv02_cmd: dict[str, Any] = {"T": _UVG02_SPEED_CTRL,
-                                     "L": 0.05,
-                                     "R": 0.05}
-        async with session.get(make_request(ugv02_cmd)) as ugv02_response:
-
-            response_body = await ugv02_response.text()
-            if response_body and response_body != "null":
-                print(response_body)
-
-        # IMU Data
-        for _ in range(10):
-            ugv02_cmd: dict[str, Any] = {"T": 130}
-            async with session.get(make_request(ugv02_cmd)) as ugv02_response:
-
-                response_body = await ugv02_response.text()
-                if response_body and response_body != "null":
-                    print(response_body)
-
-            await asyncio.sleep(1)
-
-
-asyncio.run(main())
+    # Now ask the user to provide a speed value (applied to left and right)
+    with contextlib.suppress(KeyboardInterrupt):
+        while True:
+            speed = input("New speed: ")
+            speed_msg: Speed = Speed(left=int(speed), right=int(speed))
+            msg_queue.put_nowait(speed_msg)
