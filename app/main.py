@@ -5,8 +5,8 @@ import multiprocessing as mp
 
 from config import CONNECTION_TYPE
 from message import Screen, Speed
+from msg_handler import msg_handler
 from nudge import nudge
-from queue_consumer import msg_handler
 
 # For now the connection type has to be 'remote' (i.e. http)
 assert CONNECTION_TYPE == "remote"
@@ -27,6 +27,7 @@ if __name__ == "__main__":
     nudger: mp.Process = mp.Process(target=nudge, args=(msg_queue,))
     nudger.start()
 
+    # Restore the OLED screen
     msg = Screen()
     msg_queue.put_nowait(msg)
 
@@ -34,6 +35,7 @@ if __name__ == "__main__":
     left: int = 0
     right: int = 0
     print("Enter speed (m/s x 100), e.g. 20 or 200...")
+    print("Control left and right independently with a pair (i.e. 0,20)")
     with contextlib.suppress(KeyboardInterrupt):
         while True:
             speed = input("New speed (CTRL-C to exit): ") or "0"
