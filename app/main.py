@@ -33,10 +33,10 @@ if __name__ == "__main__":
     # Now ask the user to provide a speed value (applied to left and right)
     left: int = 0
     right: int = 0
-    print("Enter speed, e.g. 10,20 or 30...")
+    print("Enter speed (m/s x 100), e.g. 20 or 200...")
     with contextlib.suppress(KeyboardInterrupt):
         while True:
-            speed = input("New speed (CTRL-C to exit): ")
+            speed = input("New speed (CTRL-C to exit): ") or "0"
             speed_items: list[str] = speed.split(",")
             if len(speed_items) == 1:
                 left = speed

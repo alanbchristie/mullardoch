@@ -16,8 +16,17 @@ _UVG02_OLED_SCREEN_CTRL: int = 3
 _UVG02_RETRIEVE_IMU_DATA: int = 126
 _UGV02_RETRIEVE_CHASSIS_INFO: int = 130
 
+# Information about the OLED screen
 _UGV02_OLED_SCREEN_LINES: int = 4
 _UGV02_OLED_SCREEN_LINE_LENGTH: int = 21
+
+# Maximum and minimum non-zero speed control values
+# Speed is limited to a maximum of 200 in either direction.
+# Also small value of less than 20 is difficult to translate
+# to a real speed due to the low-speed characteristics of DC gear motors.
+# So values 1 to 19 are uplifted to 20.
+_UGV02_ABS_SPEED_MAX: int = 200
+_UGV02_ABS_SPEED_MIN: int = 20
 
 
 def _make_request_url(ugv02_cmd: dict[str, Any]) -> str:
@@ -36,34 +45,34 @@ def _send(ugv02_cmd: dict[str, Any]) -> bool:
 
 
 def send_speed_control(msg: Speed) -> bool:
-    """Given the speed of the left and right wheels (-100 to + 100) this
-    function sends the appropriate speed command to the UGV02."""
-    # Speeds are limited to 20-100.
-    # An absolute value of less than 20 is difficult to translate to a real speed
-    # due to the low-speed characteristics of DC gear motors.
-    # So values 1 to 19 are uplifted to 20.
-    # Limit/adjust the left value.
-    left = msg.left
-    if left > 100:
-        left = 100
-    elif left < -100:
-        left = -100
-    elif 0 < left < 20:
-        left = 20
-    elif -20 < left < 0:
-        left = -20
-    # Limit/adjust the right value
-    right = msg.right
-    if right > 100:
-        right = 100
-    elif right < -100:
-        right = -100
-    elif 0 < right < 20:
-        right = 20
-    elif -20 < right < 0:
-        right = -20
+    """Given the speed of the left and right wheels (m/s x 100) this
+    function sends the appropriate speed command to the UGV02.
 
-    # Create command dictionary - speed is a float (-1.0 to +1.0)
+    Speed is limited to a maximum value in either direction.
+    Also small value s are difficult to translate
+    to a real speed due to the low-speed characteristics of DC gear motors."""
+
+    # Limit/uplift the left value.
+    left = int(msg.left)
+    if left != 0:
+        original_sign: int = -1 if left < 0 else 1
+        left = min(left, _UGV02_ABS_SPEED_MAX, key=abs)
+        left = max(left, _UGV02_ABS_SPEED_MIN, key=abs)
+        if left > 0 and original_sign == -1:
+            left *= original_sign
+
+    # Limit/uplift the right value
+    right = int(msg.right)
+    if right != 0:
+        original_sign: int = -1 if right < 0 else 1
+        right = min(right, _UGV02_ABS_SPEED_MAX, key=abs)
+        right = max(right, _UGV02_ABS_SPEED_MIN, key=abs)
+        if right > 0 and original_sign == -1:
+            right *= original_sign
+
+    # Create command dictionary.
+    # For the UGV02 we convert the speed to a float,
+    # e.g. 200 -> 2.0
     ugv02_cmd: dict[str, Any] = {
         "T": _UVG02_SPEED_CTRL,
         "L": left / 100,
@@ -84,10 +93,13 @@ def send_oled_screen_control(msg: Screen) -> bool:
             return False
     else:
         for line_num, line in enumerate(msg.text):
+            # Only process the first 4 values in the tuple/list
             if line_num >= _UGV02_OLED_SCREEN_LINES:
                 return True
+            # Set the OLED text if it's not None
+            # Blank strings ("") clear the corresponding line.
             if line is not None:
-                ugv02_cmd: dict[str, Any] = {
+                ugv02_cmd = {
                     "T": _UVG02_OLED_SCREEN_CTRL,
                     "lineNum": line_num,
                     "Text": str(line)[:_UGV02_OLED_SCREEN_LINE_LENGTH],
