@@ -1,11 +1,11 @@
-# An APScheduler process with one 'interval' Job to nudge the
-# queue consumer into regenerating Speed commands to avoid the UGV02 command heartbeat.
+"""An APScheduler process with one 'interval' Job to nudge the
+queue consumer into regenerating Speed commands to avoid the UGV02 command heartbeat."""
+
 import multiprocessing as mp
 from typing import NoReturn
 
 from apscheduler.schedulers.blocking import BlockingScheduler
-
-import config
+from config import NUDGE_PERIOD_S
 from message import Nudge
 
 
@@ -20,7 +20,10 @@ def nudge(msg_queue: mp.Queue) -> NoReturn:
     scheduler.add_job(
         _interval_job,
         args=[msg_queue],
-        trigger='interval',
-        seconds=config.NUDGE_PERIOD_S,
+        trigger="interval",
+        seconds=NUDGE_PERIOD_S,
     )
     scheduler.start()
+
+    # We can't get here!
+    assert False

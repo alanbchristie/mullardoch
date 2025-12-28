@@ -1,12 +1,16 @@
+"""Handles all messages sent to the UGV02 message queue.
+This usually results in the construction and transmission of a command
+to the UGV02."""
+
 import multiprocessing as mp
 from typing import NoReturn
 
-import message
+from message import Nudge, Speed
 from ugv02_command import send_speed_control
 
 # The current speed (of left and right wheels).
 # Initially 0 - motionless.
-_CURRENT_SPEED: message.Speed = message.Speed()
+_CURRENT_SPEED: Speed = Speed()
 
 
 def msg_handler(msg_queue: mp.Queue) -> NoReturn:
@@ -15,23 +19,27 @@ def msg_handler(msg_queue: mp.Queue) -> NoReturn:
     functions in the UGV02 command module.
 
     If any command fails the queue processing stops."""
-    global _CURRENT_SPEED
+    global _CURRENT_SPEED  # pylint: disable=global-statement
 
-    stop: bool = False
+    handle_messages: bool = True
     while msg := msg_queue.get():
-        if isinstance(msg, message.Speed):
-            # Always transmit the received speed when it's given,
-            # then copy to the current speed so it's re-used when we get a 'nudge'.
-            _CURRENT_SPEED = msg
-            if not send_speed_control(left=msg.left, right=msg.right):
-                stop = True
-        elif isinstance(msg, message.Nudge):
-            # Time to re-transmit the current speed
-            # (to avoid the AGV02 heart-beat timeout)
-            if not send_speed_control(left=_CURRENT_SPEED.left, right=_CURRENT_SPEED.right):
-                stop = True
+        if handle_messages:
+            if isinstance(msg, Speed):
+                # Always transmit the received speed when it's given,
+                # then copy to the current speed so it's re-used when we get a 'nudge'.
+                _CURRENT_SPEED = msg
+                if not send_speed_control(left=msg.left, right=msg.right):
+                    handle_messages = False
+            elif isinstance(msg, Nudge):
+                # Time to re-transmit the current speed
+                # (to avoid the AGV02 heart-beat timeout)
+                if not send_speed_control(
+                    left=_CURRENT_SPEED.left, right=_CURRENT_SPEED.right
+                ):
+                    handle_messages = False
 
-        if stop:
-            break
+            if not handle_messages:
+                print("Stopped handling messages")
 
-    print("Stopped handling messages")
+    # We can't get here!
+    assert False

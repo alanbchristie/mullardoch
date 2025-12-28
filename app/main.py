@@ -1,14 +1,17 @@
+#!/usr/bin/env python
+"""The experimental application entry point."""
 import contextlib
 import multiprocessing as mp
 
-import config
-from queue_consumer import msg_handler
-from nudge import nudge
+from config import CONNECTION_TYPE
 from message import Speed
+from nudge import nudge
+from queue_consumer import msg_handler
 
-assert config.CONNECTION_TYPE == "remote"
+# For now the connection type has to be 'remote' (i.e. http)
+assert CONNECTION_TYPE == "remote"
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 
     # Create the main message queue,
     # read by the queue consumer (command executor),
@@ -24,7 +27,7 @@ if __name__ == '__main__':
     nudger: mp.Process = mp.Process(target=nudge, args=(msg_queue,))
     nudger.start()
 
-    # Now ask the user to provide a speed value (applied to left and right)
+    # Now ask the user to provide a speed value (applied to left and right)
     with contextlib.suppress(KeyboardInterrupt):
         while True:
             speed = input("New speed: ")

@@ -1,3 +1,5 @@
 # Requirements file for the dev-container (and virtual environment).
 # All requirements MUST be pinned (i.e. only '==').
 poetry == 2.2.1
+pre-commit == 4.5.1
+commitizen == 4.10.1

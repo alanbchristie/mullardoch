@@ -1,24 +1,25 @@
-# Functions to generate UGV02 T-commands that are transmitted to the UGV02.
-# The functions in this module are used exclusively from the queue-consumer Process
-# (e.g. the queue_consumer module).
+"""Functions to generate UGV02 T-commands that are transmitted to the UGV02.
+The functions in this module are used exclusively from the queue-consumer Process
+(e.g. the queue_consumer module)."""
+
 import json
+from typing import Any
 
 import requests
-
-import config
+from config import CONNECTION_REMOTE_IP
 
 _UVG02_SPEED_CTRL: int = 1
 _UVG02_RETRIEVE_IMU_DATA: int = 126
 _UGV02_RETRIEVE_CHASSIS_INFO: int = 130
 
 
-def _make_request_url(ugv02_cmd: dict[str, any]) -> str:
+def _make_request_url(ugv02_cmd: dict[str, Any]) -> str:
     """Build the request URL given a UGV02 command dictionary."""
-    ugv02_cmd_str: str = json.dumps(ugv02_cmd, separators=(',', ':'))
-    return f"http://{config.CONNECTION_REMOTE_IP}/js?json={ugv02_cmd_str}"
+    ugv02_cmd_str: str = json.dumps(ugv02_cmd, separators=(",", ":"))
+    return f"http://{CONNECTION_REMOTE_IP}/js?json={ugv02_cmd_str}"
 
 
-def _send(ugv02_cmd: dict[str, any]) -> bool:
+def _send(ugv02_cmd: dict[str, Any]) -> bool:
     try:
         response = requests.get(_make_request_url(ugv02_cmd), timeout=2.0)
     except requests.exceptions.ConnectTimeout:
@@ -27,7 +28,7 @@ def _send(ugv02_cmd: dict[str, any]) -> bool:
     return response.status_code == 200 if response else False
 
 
-def send_speed_control(*, left: int, right: int) -> None:
+def send_speed_control(*, left: int, right: int) -> bool:
     """Given the speed of the left and right wheels (-100 to + 100) this
     function sends the appropriate speed command to the UGV02."""
     # Speeds are limited to 20-100.
@@ -39,29 +40,30 @@ def send_speed_control(*, left: int, right: int) -> None:
         left = 100
     elif left < -100:
         left = -100
-    elif left < 20 and left > 0:
+    elif 0 < left < 20:
         left = 20
-    elif left > -20 and left < 0:
+    elif -20 < left < 0:
         left = -20
     # Limit/adjust the right value
     if right > 100:
         right = 100
     elif right < -100:
         right = -100
-    elif right < 20 and right > 0:
+    elif 0 < right < 20:
         right = 20
-    elif right > -20 and right < 0:
+    elif -20 < right < 0:
         right = -20
 
     # Create command dictionary - speed is a float (-1.0 to +1.0)
-    ugv02_cmd: dict[str, any] = {
+    ugv02_cmd: dict[str, Any] = {
         "T": _UVG02_SPEED_CTRL,
         "L": left / 100,
         "R": right / 100,
     }
     return _send(ugv02_cmd)
 
-# IMU Data
+
+# IMU Data
 # The response consists of: -
 # - Wheel data (L, R)
 # - Acceleration (ax, ay, az)
