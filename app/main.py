@@ -4,7 +4,7 @@ import contextlib
 import multiprocessing as mp
 
 from config import CONNECTION_TYPE
-from message import Speed
+from message import Screen, Speed
 from nudge import nudge
 from queue_consumer import msg_handler
 
@@ -26,6 +26,9 @@ if __name__ == "__main__":
     # This sends a Nudge message at least once every 3 seconds.
     nudger: mp.Process = mp.Process(target=nudge, args=(msg_queue,))
     nudger.start()
+
+    msg = Screen()
+    msg_queue.put_nowait(msg)
 
     # Now ask the user to provide a speed value (applied to left and right)
     with contextlib.suppress(KeyboardInterrupt):

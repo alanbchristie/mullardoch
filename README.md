@@ -32,6 +32,12 @@ current health of your clone with: -
 
     pre-commit run --all-files
 
+## Related documentation
+
+- https://www.waveshare.com/wiki/08_Sub-controller_JSON_Command_Set
+- https://spotpear.com/index/study/detail/id/1079.html
+- https://www.waveshare.com/wiki/Tutorial_IX_Lidar_and_Publishing_Lidar_Topics_in_ROS2
+
 ## Loch Mullardoch
 Mullardoch is a loch (major reservoir) in the Northwest Highlands of Scotland,
 and is used as a collective project codename for my UGV02 software modules.

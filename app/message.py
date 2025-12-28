@@ -13,6 +13,18 @@ class Nudge:
 
 
 @dataclass
+class Screen:
+    """A message to put items in the 4-line OLED UGV02 rear display.
+    A text entry that is 'Null' is not modified. Each line is limited
+    to 21 characters and is truncated before display to avoid line-wrap.
+
+    If all the text lines are None (i.e. it's the default object) the display is reset.
+    """
+
+    text: tuple | None = (None, None, None, None)
+
+
+@dataclass
 class Speed:
     """Speed definition. Left and right are integers from -100 to +100."""
 
