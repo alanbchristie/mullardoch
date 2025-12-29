@@ -7,7 +7,7 @@ from typing import Any
 
 import requests
 from config import CONNECTION_REMOTE_IP
-from message import Screen, Speed
+from message import Led, Screen, Speed
 
 # UGV02 command IDs ("T" values)
 _UVG02_RESTORE_OLED_SCREEN: int = -3
@@ -15,6 +15,7 @@ _UVG02_SPEED_CTRL: int = 1
 _UVG02_OLED_SCREEN_CTRL: int = 3
 _UVG02_RETRIEVE_IMU_DATA: int = 126
 _UGV02_RETRIEVE_CHASSIS_INFO: int = 130
+_UVG02_LED_CTRL: int = 132
 
 # Information about the OLED screen
 _UGV02_OLED_SCREEN_LINES: int = 4
@@ -77,6 +78,33 @@ def send_speed_control(msg: Speed) -> bool:
         "T": _UVG02_SPEED_CTRL,
         "L": left / 100,
         "R": right / 100,
+    }
+    return _send(ugv02_cmd)
+
+
+def send_led_control(msg: Led) -> bool:
+    """Sets the voltage for the LED switches (IO4 and IO5)."""
+
+    # The device's sub-controller board features two 12V switch interfaces,
+    # (IO4 and IO5) each with two ports, totaling four ports.
+    # This command allows you to set the output voltage of these ports.
+    # When the value is set to 255, it corresponds to the voltage of a 3S battery.
+    # By default, these ports are used to control LED lights,
+    # and you can use this command to adjust the brightness of the LEDs.
+    io4: int = msg.a
+    io4 = min(max(io4, 0), 100)
+    io4 = io4 * 255 / 100
+    io4 = int(min(max(io4, 0), 255))
+
+    io5: int = msg.b
+    io5 = min(max(io5, 0), 100)
+    io5 = io5 * 255 / 100
+    io5 = int(min(max(io5, 0), 255))
+
+    ugv02_cmd: dict[str, Any] = {
+        "T": _UVG02_LED_CTRL,
+        "IO4": io4,
+        "IO5": io5,
     }
     return _send(ugv02_cmd)
 

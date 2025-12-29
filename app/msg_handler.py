@@ -5,8 +5,8 @@ to the UGV02."""
 import multiprocessing as mp
 from typing import NoReturn
 
-from message import Nudge, Screen, Speed
-from ugv02_command import send_oled_screen_control, send_speed_control
+from message import Led, Nudge, Screen, Speed
+from ugv02_command import send_led_control, send_oled_screen_control, send_speed_control
 
 # The current speed (of left and right wheels).
 # Initially 0 - motionless.
@@ -36,6 +36,10 @@ def msg_handler(msg_queue: mp.Queue) -> NoReturn:
                 success = send_speed_control(_CURRENT_SPEED)
             elif isinstance(msg, Screen):
                 success = send_oled_screen_control(msg)
+            elif isinstance(msg, Led):
+                success = send_led_control(msg)
+            else:
+                print(f"ERROR: Unknown message ({msg})")
 
             if not success:
                 handle_messages = False

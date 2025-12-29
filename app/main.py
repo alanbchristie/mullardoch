@@ -4,7 +4,7 @@ import contextlib
 import multiprocessing as mp
 
 from config import CONNECTION_TYPE
-from message import Screen, Speed
+from message import Led, Screen, Speed
 from msg_handler import msg_handler
 from nudge import nudge
 
@@ -22,14 +22,16 @@ if __name__ == "__main__":
     handler: mp.Process = mp.Process(target=msg_handler, args=(msg_queue,))
     handler.start()
 
+    # Restore the OLED screen
+    msg_queue.put_nowait(Screen())
+
+    # Switch the LEDs off
+    msg_queue.put_nowait(Led())
+
     # Create and start the 'nudge' process.
-    # This sends a Nudge message at least once every 3 seconds.
+    # This sends a Nudge message to ensure continuous speed.
     nudger: mp.Process = mp.Process(target=nudge, args=(msg_queue,))
     nudger.start()
-
-    # Restore the OLED screen
-    msg = Screen()
-    msg_queue.put_nowait(msg)
 
     # Now ask the user to provide a speed value (applied to left and right)
     left: int = 0
