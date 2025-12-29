@@ -1,6 +1,7 @@
 # Mullardoch
 
 ![GitHub License](https://img.shields.io/github/license/alanbchristie/mullardoch)
+![GitHub Release](https://img.shields.io/github/v/release/alanbchristie/mullardoch)
 [![lint](https://github.com/alanbchristie/mullardoch/actions/workflows/lint.yaml/badge.svg)](https://github.com/alanbchristie/mullardoch/actions/workflows/lint.yaml)
 
 Experimental Python code for the Waveshare [UGV02] robot.
