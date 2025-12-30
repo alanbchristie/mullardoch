@@ -1,5 +1,6 @@
-"""An APScheduler process with one 'interval' Job to nudge the
-queue consumer into regenerating Speed commands to avoid the UGV02 command heartbeat."""
+"""An APScheduler Process with one 'interval' Job to nudge the
+msg_handler into regenerating Speed commands thus avoiding
+the UGV02 command heartbeat."""
 
 import multiprocessing as mp
 from typing import NoReturn

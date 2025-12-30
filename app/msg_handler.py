@@ -1,5 +1,5 @@
-"""Handles all messages sent to the UGV02 message queue.
-This usually results in the construction and transmission of a command
+"""Handles all messages sent to the application multiprocessing message queue.
+This usually results in the construction and transmission of a JSON command
 to the UGV02."""
 
 import multiprocessing as mp

@@ -1,13 +1,22 @@
-"""Functions to generate UGV02 T-commands that are transmitted to the UGV02.
-The functions in this module are used exclusively from the queue-consumer Process
-(e.g. the queue_consumer module)."""
+"""Functions to generate UGV02 T-commands that are also then transmitted to the UGV02.
+The functions in this module are used exclusively by the msg_handler (Process).
 
+If any command transmission fails the corresponding 'send_*()' method returns False."""
+
+import ipaddress
 import json
 from typing import Any
 
 import requests
 from config import CONNECTION_REMOTE_IP
 from message import Led, Screen, Speed
+
+# If provided the connection remote IP must be an IP4 address
+if CONNECTION_REMOTE_IP:
+    try:
+        _ = ipaddress.IPv4Address(CONNECTION_REMOTE_IP)
+    except ipaddress.AddressValueError:
+        assert False, f"{CONNECTION_REMOTE_IP} is not an IPv4 address!"
 
 # UGV02 command IDs ("T" values)
 _UVG02_RESTORE_OLED_SCREEN: int = -3
@@ -45,6 +54,29 @@ def _send(ugv02_cmd: dict[str, Any]) -> bool:
     return response.status_code == 200 if response else False
 
 
+def _adjust_speed_value(value: int) -> int:
+    """Given a speed value from a message (m/s x 100)
+    we return an adjusted (safe) UGV02 value i.e. -200..+200
+    with a minimum non-zero value (typically -20 or +20)."""
+    adjusted_value = value
+    if adjusted_value != 0:
+        original_sign: int = -1 if adjusted_value < 0 else 1
+        adjusted_value = min(adjusted_value, _UGV02_ABS_SPEED_MAX, key=abs)
+        adjusted_value = max(adjusted_value, _UGV02_ABS_SPEED_MIN, key=abs)
+        if adjusted_value > 0 and original_sign == -1:
+            adjusted_value *= original_sign
+    return adjusted_value
+
+
+def _adjust_led_value(value: int) -> int:
+    """Given an LED value from a message (0..100%)
+    we return an adjusted (safe) UGV02 value i.e. 0..255."""
+    adjusted_value = min(max(value, 0), 100)
+    adjusted_value = adjusted_value * 255 / 100
+    adjusted_value = int(min(max(adjusted_value, 0), 255))
+    return adjusted_value
+
+
 def send_speed_control(msg: Speed) -> bool:
     """Given the speed of the left and right wheels (m/s x 100) this
     function sends the appropriate speed command to the UGV02.
@@ -53,23 +85,9 @@ def send_speed_control(msg: Speed) -> bool:
     Also small value s are difficult to translate
     to a real speed due to the low-speed characteristics of DC gear motors."""
 
-    # Limit/uplift the left value.
-    left = int(msg.left)
-    if left != 0:
-        original_sign: int = -1 if left < 0 else 1
-        left = min(left, _UGV02_ABS_SPEED_MAX, key=abs)
-        left = max(left, _UGV02_ABS_SPEED_MIN, key=abs)
-        if left > 0 and original_sign == -1:
-            left *= original_sign
-
-    # Limit/uplift the right value
-    right = int(msg.right)
-    if right != 0:
-        original_sign: int = -1 if right < 0 else 1
-        right = min(right, _UGV02_ABS_SPEED_MAX, key=abs)
-        right = max(right, _UGV02_ABS_SPEED_MIN, key=abs)
-        if right > 0 and original_sign == -1:
-            right *= original_sign
+    # Limit/uplift the given values.
+    left = _adjust_speed_value(int(msg.left))
+    right = _adjust_speed_value(int(msg.right))
 
     # Create command dictionary.
     # For the UGV02 we convert the speed to a float,
@@ -86,20 +104,13 @@ def send_led_control(msg: Led) -> bool:
     """Sets the voltage for the LED switches (IO4 and IO5)."""
 
     # The device's sub-controller board features two 12V switch interfaces,
-    # (IO4 and IO5) each with two ports, totaling four ports.
+    # (IO4 and IO5) each with two ports, totalling four ports.
     # This command allows you to set the output voltage of these ports.
     # When the value is set to 255, it corresponds to the voltage of a 3S battery.
     # By default, these ports are used to control LED lights,
     # and you can use this command to adjust the brightness of the LEDs.
-    io4: int = msg.a
-    io4 = min(max(io4, 0), 100)
-    io4 = io4 * 255 / 100
-    io4 = int(min(max(io4, 0), 255))
-
-    io5: int = msg.b
-    io5 = min(max(io5, 0), 100)
-    io5 = io5 * 255 / 100
-    io5 = int(min(max(io5, 0), 255))
+    io4: int = _adjust_led_value(int(msg.a))
+    io5: int = _adjust_led_value(int(msg.b))
 
     ugv02_cmd: dict[str, Any] = {
         "T": _UVG02_LED_CTRL,

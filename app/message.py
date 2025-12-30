@@ -1,5 +1,7 @@
 """The high-level messages sent to the application queue.
-There are multiple transmitters and one receiver."""
+these are translated by the ugv02_command module into JSON commands sent to the robot.
+
+There are multiple message transmitters but only one receiver (the msg_handler)."""
 
 from dataclasses import dataclass
 

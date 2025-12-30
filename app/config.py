@@ -1,6 +1,8 @@
 """The application run-time configuration (supporting '.env').
-Any module that relies on user-configuration parameters
-must import this module."""
+Any module that relies on user-configuration parameters must put then here
+and then import this module and use the values it extracts from the environment.
+
+All configuration variables for this application are prefixed with 'MULLARDOCH_'."""
 
 import os
 

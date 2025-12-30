@@ -1,15 +1,23 @@
 #!/usr/bin/env python
-"""The experimental application entry point."""
+"""The experimental application entry point.
+Simple code in this version just to exercise the UGV02 motors."""
 import contextlib
+import ipaddress
 import multiprocessing as mp
 
-from config import CONNECTION_TYPE
+from config import CONNECTION_REMOTE_IP, CONNECTION_TYPE
 from message import Led, Screen, Speed
 from msg_handler import msg_handler
 from nudge import nudge
 
 # For now the connection type has to be 'remote' (i.e. http)
 assert CONNECTION_TYPE == "remote"
+# And the IP address has to be an IPv4 address
+try:
+    _ = ipaddress.IPv4Address(CONNECTION_REMOTE_IP)
+except ipaddress.AddressValueError:
+    assert False, f"{CONNECTION_REMOTE_IP} is not an IPv4 address!"
+
 
 if __name__ == "__main__":
 
